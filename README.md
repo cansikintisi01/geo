@@ -78,7 +78,7 @@ GEO, bir oyun projesi olarak değil; **görsel efektlerin, ışık oyunlarının
 
 ---
 
-## 🧩 Gelecek Planları (Opsiyonel)
+## 🧩 Gelecek Planları 
 
 * Daha büyük haritalar
 * Ek ışık / gölge testleri
