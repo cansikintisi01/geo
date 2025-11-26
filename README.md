@@ -52,7 +52,17 @@ geo/
 
 ## 🚀 Çalıştırma
 
-Projeyi indir ve sadece `index.html` dosyasını bir tarayıcıda aç — oyun direkt çalışır.
+GEO, sadece **4 saat içinde hazırlanmış deneysel bir 3D FPS prototipidir**. Amaç mükemmel bir oyun yapmak değil; kısa sürede maksimum görsel etkiyi elde etmektir.
+
+### 🔗 Oyunu Oyna
+
+Projeyi doğrudan tarayıcından oynayabilirsin:
+
+**➡️ [https://cansikintisi01.github.io/geo](https://cansikintisi01.github.io/geo)**
+
+---
+
+Projeyi indirip `index.html` dosyasını bir tarayıcıda aç — oyun direkt çalışır.
 
 ```bash
 git clone https://github.com/cansikintisi01/geo.git
