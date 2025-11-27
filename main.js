@@ -238,7 +238,6 @@ function updateNeonWorld(dt) {
         });
     });
     
-    // FIX: HP bar glow color
     const hpFill = document.getElementById('hp-fill');
     if(player.hp > 50) {
         hpFill.style.background = `#${neonColor.getHexString()}`;
@@ -248,7 +247,6 @@ function updateNeonWorld(dt) {
         hpFill.style.boxShadow = '0 0 15px #ff0055';
     }
     
-    // FIX: Crosshair color
     const crosshair = document.getElementById('crosshair');
     crosshair.style.background = `#${neonColor.getHexString()}`;
     crosshair.style.boxShadow = `0 0 10px #${neonColor.getHexString()}`;
@@ -267,12 +265,10 @@ function updateChunks() {
         }
     }
     
-    // FIX: Improved chunk cleanup with proper mesh disposal
     for(const [key, chunk] of chunks) {
         if(!activeKeys.has(key)) {
             scene.remove(chunk.mesh);
             
-            // Dispose geometries and materials
             chunk.mesh.children.forEach(child => {
                 if(child.geometry) child.geometry.dispose();
                 if(child.material) {
@@ -289,7 +285,6 @@ function updateChunks() {
                 if(idx > -1) colliders.splice(idx, 1); 
             });
             
-            // FIX: More efficient wallMeshes cleanup
             chunk.walls?.forEach(wall => {
                 const idx = wallMeshes.indexOf(wall);
                 if(idx > -1) wallMeshes.splice(idx, 1);
@@ -398,7 +393,6 @@ function updateEnemies(dt) {
         e.children[0].rotation.z += dt * 2;
         e.position.y = 2.5 + Math.sin(clock.elapsedTime * 3 + e.userData.offset) * 0.5;
 
-        // Update health bar (visual indicator on enemy)
         const hpPercent = e.userData.hp / e.userData.maxHp;
         e.children[1].scale.setScalar(0.5 * hpPercent);
 
@@ -567,13 +561,11 @@ function updateProjectiles(dt) {
                     player.killStreak++;
                     addTrauma(0.2);
 
-                    // Kill streak messages
                     if(player.killStreak === 3) showFloatingText("TRIPLE KILL!", null);
                     else if(player.killStreak === 5) showFloatingText("UNSTOPPABLE!", null);
                     else if(player.killStreak === 10) showFloatingText("GODLIKE!", null);
                     else if(Math.random()>0.7) showFloatingText(["NICE!", "BOOM!", "PERFECT!"][Math.floor(Math.random()*3)], null);
                     
-                    // Dispose enemy meshes
                     e.children.forEach(child => {
                         if(child.geometry) child.geometry.dispose();
                         if(child.material) child.material.dispose();
@@ -598,7 +590,6 @@ function updateProjectiles(dt) {
         
         if(hit || p.life <= 0) { 
             scene.remove(p.mesh);
-            // FIX: Dispose projectile geometry
             p.mesh.geometry.dispose();
             p.mesh.material.dispose();
             projectiles.splice(i, 1); 
@@ -629,7 +620,6 @@ function spawnParticles(pos, count, color, isExplosion = false) {
 function updatePhysics(dt) {
     if(player.dead) return;
 
-    // Health regeneration
     if(Date.now() - player.lastDamageTime > CONFIG.regenDelay && player.hp < player.maxHp) {
         player.hp += dt * 20; 
         if(player.hp > player.maxHp) player.hp = player.maxHp;
@@ -637,7 +627,6 @@ function updatePhysics(dt) {
         document.getElementById('damage-fx').style.opacity = 0;
     }
 
-    // Camera shake
     if(cameraShake > 0) {
         cameraShake -= dt * 2; 
         if(cameraShake<0) cameraShake=0;
@@ -648,15 +637,12 @@ function updatePhysics(dt) {
 
     const speed = new THREE.Vector3(player.vel.x, 0, player.vel.z).length();
     
-    // Track highest speed
     if(speed > player.highestSpeed) player.highestSpeed = speed;
     
-    // FOV based on speed
     const targetFov = player.baseFov + (speed * 0.8);
     camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 5);
     camera.updateProjectionMatrix();
 
-    // Weapon animations
     const pulse = Math.sin(clock.elapsedTime * 10) * 0.05; 
     weaponGroup.scale.set(1+pulse, 1+pulse, 1);
     
@@ -674,7 +660,6 @@ function updatePhysics(dt) {
 
     input.mouseX = 0; input.mouseY = 0;
 
-    // Movement
     const forward = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), camRot.y);
     const right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), camRot.y);
     const wishDir = new THREE.Vector3();
@@ -716,7 +701,6 @@ function updatePhysics(dt) {
         }
     }
 
-    // Wall breaking mechanic
     if(colX) {
         if(speed > CONFIG.wallBreakSpeed && hitWall && hitWall.userData.isBreakable) {
             spawnParticles(hitWall.position, 30, 0xff0055, true); 
@@ -724,7 +708,6 @@ function updatePhysics(dt) {
             showFloatingText(["SMASH!", "BOOM!", "UNSTOPPABLE!"][Math.floor(Math.random()*3)], null);
             addTrauma(0.5);
             
-            // Dispose wall geometry
             if(hitWall.geometry) hitWall.geometry.dispose();
             if(hitWall.material) hitWall.material.dispose();
             
@@ -779,7 +762,6 @@ function updatePhysics(dt) {
 
     camera.position.copy(player.pos);
     
-    // Update speed display with color
     const speedDisplay = document.getElementById('speed-val');
     speedDisplay.innerText = Math.round(speed);
     if(speed > CONFIG.wallBreakSpeed) {
@@ -823,7 +805,6 @@ function loop() {
     updateProjectiles(dt);
     updateNeonWorld(dt);
     
-    // FIX: Proper particle cleanup with disposal
     for(let i=particles.length-1; i>=0; i--) {
         const p = particles[i];
         p.life -= dt * 1.5; 
