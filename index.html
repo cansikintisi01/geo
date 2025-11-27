@@ -66,32 +66,6 @@
             transition: opacity 0.2s;
         }
 
-        /* NEW: Dash cooldown indicator */
-        #dash-indicator {
-            position: absolute; bottom: 150px; right: 40px;
-            width: 80px; height: 80px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid rgba(0, 255, 255, 0.5);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column;
-            backdrop-filter: blur(8px);
-        }
-        
-        #dash-indicator .dash-label {
-            font-size: 10px; color: #0ff; font-weight: 900; letter-spacing: 2px;
-        }
-        
-        #dash-cooldown-ring {
-            position: absolute; inset: -3px;
-            border-radius: 50%;
-            background: conic-gradient(#0ff 0%, transparent 0%);
-            transition: background 0.1s linear;
-        }
-        
-        #dash-icon {
-            font-size: 32px; color: #0ff; text-shadow: 0 0 10px #0ff; z-index: 1;
-        }
 
         #streak-display {
             position: absolute; top: 40px; right: 40px;
@@ -146,7 +120,7 @@
 
     <div id="menu">
         <h1 id="menu-title">BETA VERSION</h1>
-        <p class="controls">WASD: Hareket | SPACE: Zıpla | SHIFT: Dash (Atılma) | 1-2: Silah | FARE: Ateş Et</p>
+        <p class="controls">WASD: Hareket | SPACE: Zıpla | SHIFT: Dash (Atılma) | 1-3: Silah | X: Shield | FARE: Ateş Et</p>
         <button id="start-btn">BAŞLAT</button>
     </div>
 
@@ -179,6 +153,7 @@
                 <div class="value" id="speed-val">0</div>
             </div>
         </div>
+
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -191,50 +166,24 @@
     <script src="main.js"></script>
 
     <script>
-        let lastTime = performance.now();
-        let frames = 0;
-        function updateFPS() {
-            frames++;
-            const now = performance.now();
-            if(now >= lastTime + 1000) {
-                document.getElementById('fps-counter').innerText = 'FPS: ' + frames;
-                frames = 0;
-                lastTime = now;
-            }
-            requestAnimationFrame(updateFPS);
-        }
-        updateFPS();
-
         setInterval(() => {
             if(typeof player !== 'undefined' && typeof CONFIG !== 'undefined') {
                 const now = Date.now();
                 const timeSinceDash = now - player.lastDash;
                 const cooldownProgress = Math.min(1, timeSinceDash / CONFIG.dashCooldown);
-                const ring = document.getElementById('dash-cooldown-ring');
-                const icon = document.getElementById('dash-icon');
-                
-                if(cooldownProgress >= 1) {
-                    ring.style.background = 'conic-gradient(#0ff 100%, transparent 0%)';
-                    icon.style.opacity = '1';
-                    icon.style.transform = 'scale(1)';
-                } else {
-                    const angle = cooldownProgress * 360;
-                    ring.style.background = `conic-gradient(#0ff ${angle}deg, transparent ${angle}deg)`;
-                    icon.style.opacity = '0.3';
-                    icon.style.transform = 'scale(0.8)';
-                }
 
                 const streakDisplay = document.getElementById('streak-display');
                 const streakValue = document.getElementById('streak-value');
-                if(player.killStreak >= 3) {
-                    streakDisplay.classList.add('active');
-                    streakValue.innerText = player.killStreak;
-                } else {
-                    streakDisplay.classList.remove('active');
+                if(streakDisplay && streakValue) {
+                    if(player.killStreak >= 3) {
+                        streakDisplay.classList.add('active');
+                        streakValue.innerText = player.killStreak;
+                    } else {
+                        streakDisplay.classList.remove('active');
+                    }
                 }
             }
         }, 50);
     </script>
 </body>
 </html>
-
