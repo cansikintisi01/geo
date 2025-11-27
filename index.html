@@ -8,7 +8,6 @@
 
         #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
 
-
         .hud-bottom {
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 60px; align-items: flex-end;
@@ -30,8 +29,8 @@
         .value { font-size: 50px; font-weight: 900; color: #fff; line-height: 0.85; font-style: italic; }
         
         #hp-val { color: #ff0055; text-shadow: 0 0 20px rgba(255, 0, 85, 0.8); }
-        #hp-bar-bg { width: 100%; height: 6px; background: #333; margin-top: 8px; transform: skewX(15deg); }
-        #hp-fill { width: 100%; height: 100%; background: #ff0055; transition: width 0.1s; box-shadow: 0 0 15px #ff0055; }
+        #hp-bar-bg { width: 100%; height: 6px; background: #333; margin-top: 8px; transform: skewX(15deg); overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: #ff0055; transition: width 0.2s; box-shadow: 0 0 15px #ff0055; }
         
         #weapon-name { color: #ffff00; text-shadow: 0 0 20px rgba(255, 255, 0, 0.8); font-size: 30px; }
 
@@ -58,13 +57,63 @@
             position: absolute; inset: 0; 
             background: radial-gradient(circle, transparent 40%, rgba(255, 0, 50, 0.6) 90%);
             opacity: 0; transition: opacity 0.1s; mix-blend-mode: hard-light; pointer-events: none;
-
         }
         
         #message {
             position: absolute; top: 25%; width: 100%; text-align: center;
             font-size: 32px; color: #fff; font-weight: 900; opacity: 0; font-style: italic;
             text-shadow: 0 0 20px rgba(255,255,255,0.8); pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        /* NEW: Dash cooldown indicator */
+        #dash-indicator {
+            position: absolute; bottom: 150px; right: 40px;
+            width: 80px; height: 80px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(8px);
+        }
+        
+        #dash-indicator .dash-label {
+            font-size: 10px; color: #0ff; font-weight: 900; letter-spacing: 2px;
+        }
+        
+        #dash-cooldown-ring {
+            position: absolute; inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(#0ff 0%, transparent 0%);
+            transition: background 0.1s linear;
+        }
+        
+        #dash-icon {
+            font-size: 32px; color: #0ff; text-shadow: 0 0 10px #0ff; z-index: 1;
+        }
+
+        /* NEW: Kill streak indicator */
+        #streak-display {
+            position: absolute; top: 40px; right: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 0, 85, 0.5);
+            padding: 15px 30px;
+            transform: skewX(-10deg);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        #streak-display.active { opacity: 1; }
+        
+        #streak-display .streak-label {
+            font-size: 10px; color: #ff0055; font-weight: 900; letter-spacing: 3px;
+        }
+        
+        #streak-display .streak-value {
+            font-size: 40px; font-weight: 900; color: #ff0055; 
+            text-shadow: 0 0 20px #ff0055; font-style: italic;
         }
 
         #menu {
@@ -84,17 +133,27 @@
         }
         button:hover { background: #fff; color: #000; box-shadow: 0 0 50px #fff; transform: scale(1.1); }
 
+        /* NEW: FPS Counter */
+        #fps-counter {
+            position: absolute; top: 20px; left: 20px;
+            font-size: 14px; color: #0f0; font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
     </style>
 </head>
 <body>
 
     <div id="menu">
         <h1 id="menu-title">BETA VERSION</h1>
-        <p class="controls">WASD: Hareket | SPACE: Zıpla | SHIFT: Dash (Atılma) | 1-2: Silah</p>
+        <p class="controls">WASD: Hareket | SPACE: Zıpla | SHIFT: Dash (Atılma) | 1-2: Silah | FARE: Ateş Et</p>
         <button id="start-btn">BAŞLAT</button>
     </div>
 
     <div id="ui-layer">
+        <div id="fps-counter">FPS: 60</div>
         <div id="damage-fx"></div>
         <div id="message"></div>
         <div id="crosshair"></div>
@@ -103,10 +162,23 @@
             <div class="hm-line"></div>
         </div>
 
+        <!-- NEW: Dash cooldown indicator -->
+        <div id="dash-indicator">
+            <div id="dash-cooldown-ring"></div>
+            <div id="dash-icon">⚡</div>
+            <div class="dash-label">DASH</div>
+        </div>
+
+        <!-- NEW: Kill streak indicator -->
+        <div id="streak-display">
+            <div class="streak-label">COMBO</div>
+            <div class="streak-value" id="streak-value">0</div>
+        </div>
+
         <div class="hud-bottom" id="hud-container">
             <div class="stat-box">
                 <span class="label">SAĞLIK</span>
-                <div class="value" id="hp-val"></div>
+                <div class="value" id="hp-val">100</div>
                 <div id="hp-bar-bg"><div id="hp-fill"></div></div>
             </div>
             <div class="stat-box">
@@ -128,7 +200,54 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="main.js"></script>
+
+    <script>
+        // FPS Counter
+        let lastTime = performance.now();
+        let frames = 0;
+        function updateFPS() {
+            frames++;
+            const now = performance.now();
+            if(now >= lastTime + 1000) {
+                document.getElementById('fps-counter').innerText = 'FPS: ' + frames;
+                frames = 0;
+                lastTime = now;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+
+        // Dash cooldown visual update
+        setInterval(() => {
+            if(typeof player !== 'undefined' && typeof CONFIG !== 'undefined') {
+                const now = Date.now();
+                const timeSinceDash = now - player.lastDash;
+                const cooldownProgress = Math.min(1, timeSinceDash / CONFIG.dashCooldown);
+                const ring = document.getElementById('dash-cooldown-ring');
+                const icon = document.getElementById('dash-icon');
+                
+                if(cooldownProgress >= 1) {
+                    ring.style.background = 'conic-gradient(#0ff 100%, transparent 0%)';
+                    icon.style.opacity = '1';
+                    icon.style.transform = 'scale(1)';
+                } else {
+                    const angle = cooldownProgress * 360;
+                    ring.style.background = `conic-gradient(#0ff ${angle}deg, transparent ${angle}deg)`;
+                    icon.style.opacity = '0.3';
+                    icon.style.transform = 'scale(0.8)';
+                }
+
+                // Update kill streak display
+                const streakDisplay = document.getElementById('streak-display');
+                const streakValue = document.getElementById('streak-value');
+                if(player.killStreak >= 3) {
+                    streakDisplay.classList.add('active');
+                    streakValue.innerText = player.killStreak;
+                } else {
+                    streakDisplay.classList.remove('active');
+                }
+            }
+        }, 50);
+    </script>
 </body>
-
 </html>
-
