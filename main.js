@@ -17,7 +17,6 @@ const WEAPONS = [
 const Textures = {
     floor: null, wall: null,
     init() {
-
         const c1 = document.createElement('canvas'); c1.width=1024; c1.height=1024;
         const ctx1 = c1.getContext('2d');
         ctx1.fillStyle = '#050505'; ctx1.fillRect(0,0,1024,1024);
@@ -43,9 +42,10 @@ const Textures = {
 let scene, camera, renderer, composer, clock;
 let player = { 
     pos: new THREE.Vector3(0,5,0), vel: new THREE.Vector3(), 
-    hp: 100, score: 0, dead: false, onGround: false,
+    hp: 100, maxHp: 100, score: 0, dead: false, onGround: false,
     baseFov: 90, weaponIdx: 0, lastFire: 0,
-    baseHue: 0, lastDash: 0, lastDamageTime: 0 
+    baseHue: 0, lastDash: 0, lastDamageTime: 0,
+    killStreak: 0, highestSpeed: 0
 };
 let input = { w:0, a:0, s:0, d:0, space:0, mouseX:0, mouseY:0 };
 let camRot = { x: 0, y: 0 };
@@ -91,6 +91,13 @@ function playSound(type) {
         gain.gain.setValueAtTime(0.5, now);
         gain.gain.linearRampToValueAtTime(0, now + 0.5);
     }
+    else if(type === 'dash') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.linearRampToValueAtTime(200, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.2);
+    }
     
     osc.connect(gain); gain.connect(AudioCtx.destination);
     osc.start(); osc.stop(now + 0.5);
@@ -107,14 +114,20 @@ function showFloatingText(text, pos) {
     div.style.textShadow = '0 0 20px #ff0055';
     div.style.pointerEvents = 'none';
     div.style.transform = 'translate(-50%, -50%)';
+    div.style.transition = 'all 0.8s ease-out';
     div.style.left = '50%'; div.style.top = '50%'; 
     document.body.appendChild(div);
     
     const x = window.innerWidth/2 + (Math.random()-0.5)*400;
-    const y = window.innerHeight/2 + (Math.random()-0.5)*200;
-    div.style.left = x + 'px'; div.style.top = y + 'px';
+    const y = window.innerHeight/2 + (Math.random()-0.5)*200 - 100;
+    
+    requestAnimationFrame(() => {
+        div.style.left = x + 'px'; 
+        div.style.top = y + 'px';
+        div.style.transform = 'translate(-50%, -50%) scale(1.5) rotate(' + (Math.random()*20-10) + 'deg)';
+        div.style.opacity = '0';
+    });
 
-    setTimeout(() => { div.style.transform = 'scale(2) rotate(20deg)'; div.style.opacity = '0'; }, 50);
     setTimeout(() => div.remove(), 1000);
 }
 
@@ -165,12 +178,14 @@ function startGame() {
     document.body.requestPointerLock();
     if(AudioCtx.state === 'suspended') AudioCtx.resume();
     player.lastDamageTime = Date.now();
+    updateHUD();
     loop();
 }
 
-
-
-
+function updateHUD() {
+    document.getElementById('hp-val').innerText = Math.ceil(player.hp);
+    document.getElementById('hp-fill').style.width = (player.hp / player.maxHp * 100) + '%';
+}
 
 function createWeapon() {
     weaponGroup = new THREE.Group();
@@ -197,15 +212,14 @@ function updateWeaponVisuals() {
     muzzleLight.color.setHex(w.color);
     if(player.weaponIdx === 0) {
         weaponBody.scale.set(1, 1, 1);
-        document.getElementById('crosshair').style.cssText = "width:4px; height:4px; border-radius:50%";
+        document.getElementById('crosshair').style.cssText = "width:4px; height:4px; border-radius:50%; background:#00ff88; box-shadow:0 0 10px #00ff88;";
     } else {
         weaponBody.scale.set(1.5, 0.8, 0.8);
-        document.getElementById('crosshair').style.cssText = "width:20px; height:20px; border-radius:2px";
+        document.getElementById('crosshair').style.cssText = "width:20px; height:20px; border-radius:2px; background:#ffaa00; box-shadow:0 0 10px #ffaa00;";
     }
     document.getElementById('weapon-name').innerText = w.name;
-    document.getElementById('weapon-name').style.color = '#' + w.color.toString(16);
+    document.getElementById('weapon-name').style.color = '#' + w.color.toString(16).padStart(6, '0');
 }
-
 
 function updateNeonWorld(dt) {
     player.baseHue += CONFIG.neonSpeed * dt * 50;
@@ -224,8 +238,20 @@ function updateNeonWorld(dt) {
         });
     });
     
-    document.getElementById('hp-fill').style.boxShadow = `0 0 15px #${neonColor.getHexString()}`;
-    document.getElementById('crosshair').style.borderColor = `#${neonColor.getHexString()}`;
+    // FIX: HP bar glow color
+    const hpFill = document.getElementById('hp-fill');
+    if(player.hp > 50) {
+        hpFill.style.background = `#${neonColor.getHexString()}`;
+        hpFill.style.boxShadow = `0 0 15px #${neonColor.getHexString()}`;
+    } else {
+        hpFill.style.background = '#ff0055';
+        hpFill.style.boxShadow = '0 0 15px #ff0055';
+    }
+    
+    // FIX: Crosshair color
+    const crosshair = document.getElementById('crosshair');
+    crosshair.style.background = `#${neonColor.getHexString()}`;
+    crosshair.style.boxShadow = `0 0 10px #${neonColor.getHexString()}`;
 }
 
 function updateChunks() {
@@ -240,14 +266,35 @@ function updateChunks() {
             if(!chunks.has(key)) createChunk(cx+x, cz+z, key);
         }
     }
+    
+    // FIX: Improved chunk cleanup with proper mesh disposal
     for(const [key, chunk] of chunks) {
         if(!activeKeys.has(key)) {
             scene.remove(chunk.mesh);
-            chunk.colliders.forEach(c => { 
-                const idx = colliders.indexOf(c); if(idx > -1) colliders.splice(idx, 1); 
-                const mIdx = wallMeshes.findIndex(m => m.userData.box === c);
-                if(mIdx > -1) wallMeshes.splice(mIdx, 1);
+            
+            // Dispose geometries and materials
+            chunk.mesh.children.forEach(child => {
+                if(child.geometry) child.geometry.dispose();
+                if(child.material) {
+                    if(Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
             });
+            
+            chunk.colliders.forEach(c => { 
+                const idx = colliders.indexOf(c); 
+                if(idx > -1) colliders.splice(idx, 1); 
+            });
+            
+            // FIX: More efficient wallMeshes cleanup
+            chunk.walls?.forEach(wall => {
+                const idx = wallMeshes.indexOf(wall);
+                if(idx > -1) wallMeshes.splice(idx, 1);
+            });
+            
             chunks.delete(key);
         }
     }
@@ -263,6 +310,7 @@ function createChunk(cx, cz, key) {
     grp.add(floor);
 
     const chunkColliders = [];
+    const chunkWalls = [];
     const numWalls = 4 + Math.floor(Math.random()*4);
     const wallMat = new THREE.MeshStandardMaterial({ map: Textures.wall, emissive: 0xff0055, emissiveIntensity: 0.5 });
     
@@ -286,9 +334,11 @@ function createChunk(cx, cz, key) {
         colliders.push(box);
         chunkColliders.push(box);
         wallMeshes.push(wall);
+        chunkWalls.push(wall);
     }
+    
     scene.add(grp);
-    chunks.set(key, { mesh: grp, colliders: chunkColliders });
+    chunks.set(key, { mesh: grp, colliders: chunkColliders, walls: chunkWalls });
 }
 
 function spawnEnemy() {
@@ -302,17 +352,17 @@ function spawnEnemy() {
     if(tier > 0.6) type = 1;
     if(tier > 0.9) type = 2;
 
-    let geo, color, hp, speed, scale;
+    let geo, color, hp, speed, scale, points;
 
     if(type === 0) { 
         geo = new THREE.TetrahedronGeometry(1.0);
-        color = 0xff0055; hp = 3; speed = 14; scale = 1;
+        color = 0xff0055; hp = 3; speed = 14; scale = 1; points = 100;
     } else if (type === 1) { 
         geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-        color = 0x00ff88; hp = 8; speed = 9; scale = 1.2;
+        color = 0x00ff88; hp = 8; speed = 9; scale = 1.2; points = 250;
     } else { 
         geo = new THREE.DodecahedronGeometry(1.2);
-        color = 0x00ffff; hp = 20; speed = 5; scale = 1.5;
+        color = 0x00ffff; hp = 20; speed = 5; scale = 1.5; points = 500;
     }
 
     const grp = new THREE.Group();
@@ -326,7 +376,7 @@ function spawnEnemy() {
     grp.position.set(x, 2, z);
     grp.scale.set(scale, scale, scale);
     
-    grp.userData = { hp, speed, type, offset: Math.random()*100 };
+    grp.userData = { hp, maxHp: hp, speed, type, offset: Math.random()*100, points };
     grp.userData.box = new THREE.Box3();
 
     scene.add(grp);
@@ -334,7 +384,7 @@ function spawnEnemy() {
 }
 
 function updateEnemies(dt) {
-    if(enemies.length < CONFIG.maxEnemies) spawnEnemy();
+    if(enemies.length < CONFIG.maxEnemies && !player.dead) spawnEnemy();
     
     const dir = new THREE.Vector3();
     const eBox = new THREE.Box3();
@@ -348,24 +398,33 @@ function updateEnemies(dt) {
         e.children[0].rotation.z += dt * 2;
         e.position.y = 2.5 + Math.sin(clock.elapsedTime * 3 + e.userData.offset) * 0.5;
 
-        if(dist > CONFIG.chunkSize * 3) { scene.remove(e); enemies.splice(i, 1); continue; }
+        // Update health bar (visual indicator on enemy)
+        const hpPercent = e.userData.hp / e.userData.maxHp;
+        e.children[1].scale.setScalar(0.5 * hpPercent);
+
+        if(dist > CONFIG.chunkSize * 3) { 
+            scene.remove(e); 
+            e.children.forEach(child => {
+                if(child.geometry) child.geometry.dispose();
+                if(child.material) child.material.dispose();
+            });
+            enemies.splice(i, 1); 
+            continue; 
+        }
 
         if(!player.dead) {
             if(dist > 2.5) {
-
                 dir.subVectors(player.pos, e.position).normalize();
                 
                 raycaster.set(e.position, dir);
                 const hits = raycaster.intersectObjects(wallMeshes);
                 
                 if(hits.length > 0 && hits[0].distance < 5) {
-
                     const avoidance = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0));
                     dir.add(avoidance.multiplyScalar(1.5)).normalize();
                 }
 
                 const moveVec = dir.multiplyScalar(e.userData.speed * dt);
-                
                 const nextPos = e.position.clone().add(moveVec);
                 eBox.setFromCenterAndSize(nextPos, new THREE.Vector3(2, 2, 2));
                 
@@ -382,12 +441,18 @@ function updateEnemies(dt) {
             }
 
             if(dist < 3.5) {
-                player.hp -= (e.userData.type === 2 ? 60 : 30) * dt; 
+                const damage = (e.userData.type === 2 ? 60 : 30) * dt;
+                player.hp -= damage; 
                 player.lastDamageTime = Date.now();
+                player.killStreak = 0; // Reset streak on damage
+                
                 if(player.hp < 0) player.hp = 0;
-                document.getElementById('hp-fill').style.width = player.hp + '%';
+                updateHUD();
                 addTrauma(0.5 * dt);
-                document.getElementById('damage-fx').style.opacity = Math.min(0.8, (100 - player.hp) / 100);
+                
+                const damagePercent = (player.maxHp - player.hp) / player.maxHp;
+                document.getElementById('damage-fx').style.opacity = Math.min(0.8, damagePercent);
+                
                 if(player.hp <= 0 && !player.dead) gameOver();
             }
         }
@@ -420,12 +485,23 @@ function performDash() {
     camera.fov = player.baseFov + 40;
     camera.updateProjectionMatrix();
 
-    weaponBody.material.opacity = 0.5;
+    weaponBody.material.opacity = 0.3;
     weaponBody.material.transparent = true;
-    setTimeout(() => { weaponBody.material.opacity = 1; weaponBody.material.transparent = false; }, 300);
+    setTimeout(() => { 
+        weaponBody.material.opacity = 1; 
+        weaponBody.material.transparent = false; 
+    }, 300);
 
     spawnParticles(player.pos, 15, 0x00ffff, true);
-    playSound('shoot'); 
+    playSound('dash'); 
+    showMessage("DASH!", 300);
+}
+
+function showMessage(text, duration) {
+    const msg = document.getElementById('message');
+    msg.innerText = text;
+    msg.style.opacity = 1;
+    setTimeout(() => { msg.style.opacity = 0; }, duration);
 }
 
 function fireWeapon() {
@@ -471,29 +547,62 @@ function updateProjectiles(dt) {
             const e = enemies[j];
             eBox.setFromCenterAndSize(e.position, new THREE.Vector3(2,2,2)); 
             if(eBox.intersectsBox(pBox)) {
-                hit = true; e.userData.hp -= p.damage;
+                hit = true; 
+                e.userData.hp -= p.damage;
                 spawnParticles(p.mesh.position, 3, 0x00ffff);
                 playSound('hit');
                 
                 const hm = document.getElementById('hitmarker');
-                hm.style.opacity = 1; hm.style.transform = "translate(-50%, -50%) scale(1.3) rotate(10deg)";
-                setTimeout(() => { hm.style.opacity = 0; hm.style.transform = "translate(-50%, -50%) scale(1)"; }, 100);
+                hm.style.opacity = 1; 
+                hm.style.transform = "translate(-50%, -50%) scale(1.3) rotate(10deg)";
+                setTimeout(() => { 
+                    hm.style.opacity = 0; 
+                    hm.style.transform = "translate(-50%, -50%) scale(1)"; 
+                }, 100);
 
                 if(e.userData.hp <= 0) {
                     spawnParticles(e.position, 25, 0xff0055, true);
-                    scene.remove(e); enemies.splice(j, 1);
-                    player.score += 150;
+                    
+                    player.score += e.userData.points;
+                    player.killStreak++;
                     addTrauma(0.2);
 
-                    if(Math.random()>0.7) showFloatingText("NICE!", null);
+                    // Kill streak messages
+                    if(player.killStreak === 3) showFloatingText("TRIPLE KILL!", null);
+                    else if(player.killStreak === 5) showFloatingText("UNSTOPPABLE!", null);
+                    else if(player.killStreak === 10) showFloatingText("GODLIKE!", null);
+                    else if(Math.random()>0.7) showFloatingText(["NICE!", "BOOM!", "PERFECT!"][Math.floor(Math.random()*3)], null);
+                    
+                    // Dispose enemy meshes
+                    e.children.forEach(child => {
+                        if(child.geometry) child.geometry.dispose();
+                        if(child.material) child.material.dispose();
+                    });
+                    
+                    scene.remove(e); 
+                    enemies.splice(j, 1);
                 }
                 break;
             }
         }
+        
         if(!hit) {
-            for(let c of colliders) if(c.intersectsBox(pBox)) { hit=true; spawnParticles(p.mesh.position, 2, 0xffaa00); break; }
+            for(let c of colliders) {
+                if(c.intersectsBox(pBox)) { 
+                    hit=true; 
+                    spawnParticles(p.mesh.position, 2, 0xffaa00); 
+                    break; 
+                }
+            }
         }
-        if(hit || p.life <= 0) { scene.remove(p.mesh); projectiles.splice(i, 1); }
+        
+        if(hit || p.life <= 0) { 
+            scene.remove(p.mesh);
+            // FIX: Dispose projectile geometry
+            p.mesh.geometry.dispose();
+            p.mesh.material.dispose();
+            projectiles.splice(i, 1); 
+        }
     }
 }
 
@@ -511,7 +620,8 @@ function spawnParticles(pos, count, color, isExplosion = false) {
             mesh, 
             vel: new THREE.Vector3((Math.random()-.5) * (isExplosion?30:10), (Math.random()-.5) * (isExplosion?30:10) + 5, (Math.random()-.5) * (isExplosion?30:10)), 
             rotVel: { x: (Math.random()-.5)*10, y: (Math.random()-.5)*10 },
-            life: 1.0, startScale: 1.0
+            life: 1.0, 
+            startScale: 1.0
         });
     }
 }
@@ -519,28 +629,34 @@ function spawnParticles(pos, count, color, isExplosion = false) {
 function updatePhysics(dt) {
     if(player.dead) return;
 
-    if(Date.now() - player.lastDamageTime > CONFIG.regenDelay && player.hp < 100) {
+    // Health regeneration
+    if(Date.now() - player.lastDamageTime > CONFIG.regenDelay && player.hp < player.maxHp) {
         player.hp += dt * 20; 
-        if(player.hp > 100) player.hp = 100;
-        document.getElementById('hp-fill').style.width = player.hp + '%';
+        if(player.hp > player.maxHp) player.hp = player.maxHp;
+        updateHUD();
         document.getElementById('damage-fx').style.opacity = 0;
     }
 
-
+    // Camera shake
     if(cameraShake > 0) {
-        cameraShake -= dt * 2; if(cameraShake<0) cameraShake=0;
+        cameraShake -= dt * 2; 
+        if(cameraShake<0) cameraShake=0;
         const amt = cameraShake*cameraShake * 0.5;
         camera.position.add(new THREE.Vector3((Math.random()-.5)*amt, (Math.random()-.5)*amt, (Math.random()-.5)*amt));
     }
     camera.rotation.set(camRot.x, camRot.y, 0, 'YXZ');
 
-
     const speed = new THREE.Vector3(player.vel.x, 0, player.vel.z).length();
     
+    // Track highest speed
+    if(speed > player.highestSpeed) player.highestSpeed = speed;
+    
+    // FOV based on speed
     const targetFov = player.baseFov + (speed * 0.8);
     camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 5);
     camera.updateProjectionMatrix();
 
+    // Weapon animations
     const pulse = Math.sin(clock.elapsedTime * 10) * 0.05; 
     weaponGroup.scale.set(1+pulse, 1+pulse, 1);
     
@@ -558,6 +674,7 @@ function updatePhysics(dt) {
 
     input.mouseX = 0; input.mouseY = 0;
 
+    // Movement
     const forward = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), camRot.y);
     const right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), camRot.y);
     const wishDir = new THREE.Vector3();
@@ -599,12 +716,18 @@ function updatePhysics(dt) {
         }
     }
 
+    // Wall breaking mechanic
     if(colX) {
         if(speed > CONFIG.wallBreakSpeed && hitWall && hitWall.userData.isBreakable) {
             spawnParticles(hitWall.position, 30, 0xff0055, true); 
             playSound('smash');
-            showFloatingText(["WTF!!", "SMASH!", "BOOM!"][Math.floor(Math.random()*3)], null);
+            showFloatingText(["SMASH!", "BOOM!", "UNSTOPPABLE!"][Math.floor(Math.random()*3)], null);
             addTrauma(0.5);
+            
+            // Dispose wall geometry
+            if(hitWall.geometry) hitWall.geometry.dispose();
+            if(hitWall.material) hitWall.material.dispose();
+            
             scene.remove(hitWall);
             wallMeshes.splice(wallMeshes.indexOf(hitWall), 1);
             colliders.splice(colliders.indexOf(hitWall.userData.box), 1);
@@ -628,8 +751,12 @@ function updatePhysics(dt) {
         if(speed > CONFIG.wallBreakSpeed && hitWall && hitWall.userData.isBreakable) {
             spawnParticles(hitWall.position, 30, 0xff0055, true);
             playSound('smash');
-            showFloatingText("UNSTOPPABLE!", null);
+            showFloatingText("WALL BREAKER!", null);
             addTrauma(0.5);
+            
+            if(hitWall.geometry) hitWall.geometry.dispose();
+            if(hitWall.material) hitWall.material.dispose();
+            
             scene.remove(hitWall);
             wallMeshes.splice(wallMeshes.indexOf(hitWall), 1);
             colliders.splice(colliders.indexOf(hitWall.userData.box), 1);
@@ -651,14 +778,26 @@ function updatePhysics(dt) {
     }
 
     camera.position.copy(player.pos);
-    document.getElementById('speed-val').innerText = Math.round(speed);
-    document.getElementById('speed-val').style.color = speed > CONFIG.wallBreakSpeed ? '#f0f' : '#fff';
+    
+    // Update speed display with color
+    const speedDisplay = document.getElementById('speed-val');
+    speedDisplay.innerText = Math.round(speed);
+    if(speed > CONFIG.wallBreakSpeed) {
+        speedDisplay.style.color = '#f0f';
+        speedDisplay.style.textShadow = '0 0 20px #f0f';
+    } else {
+        speedDisplay.style.color = '#fff';
+        speedDisplay.style.textShadow = 'none';
+    }
 }
 
 function gameOver() {
     player.dead = true;
     document.exitPointerLock();
-    document.getElementById('menu-title').innerText = "ÖLDÜN";
+    
+    const title = document.getElementById('menu-title');
+    title.innerHTML = `ÖLDÜN<br><span style="font-size:40px;">Skor: ${player.score} | En Yüksek Hız: ${Math.round(player.highestSpeed)}</span>`;
+    
     document.getElementById('start-btn').innerText = "TEKRAR OYNA";
     document.getElementById('menu').style.display = 'flex';
 }
@@ -684,6 +823,7 @@ function loop() {
     updateProjectiles(dt);
     updateNeonWorld(dt);
     
+    // FIX: Proper particle cleanup with disposal
     for(let i=particles.length-1; i>=0; i--) {
         const p = particles[i];
         p.life -= dt * 1.5; 
@@ -692,8 +832,15 @@ function loop() {
         p.mesh.rotation.x += p.rotVel.x * dt;
         p.mesh.rotation.y += p.rotVel.y * dt;
         p.mesh.scale.setScalar(Math.max(0, p.life * p.startScale));
-        if(p.life <= 0) { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); particles.splice(i, 1); }
+        
+        if(p.life <= 0) { 
+            scene.remove(p.mesh); 
+            p.mesh.geometry.dispose(); 
+            p.mesh.material.dispose(); 
+            particles.splice(i, 1); 
+        }
     }
+    
     composer.render();
 }
 
