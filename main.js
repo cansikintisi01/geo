@@ -438,7 +438,7 @@ function updateEnemies(dt) {
                 const damage = (e.userData.type === 2 ? 60 : 30) * dt;
                 player.hp -= damage; 
                 player.lastDamageTime = Date.now();
-                player.killStreak = 0; // Reset streak on damage
+                player.killStreak = 0; 
                 
                 if(player.hp < 0) player.hp = 0;
                 updateHUD();
