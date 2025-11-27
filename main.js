@@ -28,7 +28,7 @@ const Textures = {
         ctx1.beginPath();
         for(let i=0; i<=1024; i+=128) { ctx1.moveTo(i,0); ctx1.lineTo(i,1024); ctx1. moveTo(0,i); ctx1.lineTo(1024,i); }
         ctx1.stroke();
-        this.floor = new THREE. CanvasTexture(c1);
+        this.floor = new THREE.CanvasTexture(c1);
         this.floor.wrapS = this.floor.wrapT = THREE.RepeatWrapping;
 
         const c2 = document. createElement('canvas'); c2.width=512; c2.height=512;
@@ -69,16 +69,16 @@ let weaponGroup, muzzleLight, weaponBody, weaponRail;
 let weaponSway = { x:0, y:0, tilt: 0 };
 let recoil = 0;
 
-const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const AudioCtx = new (window.AudioContext || window. webkitAudioContext)();
 
 function playSound(type) {
-    if(AudioCtx.state === 'suspended') AudioCtx.resume();
+    if(AudioCtx. state === 'suspended') AudioCtx.resume();
     const osc = AudioCtx.createOscillator();
     const gain = AudioCtx.createGain();
     const now = AudioCtx.currentTime;
 
     if(type === 'shoot') {
-        osc.frequency.setValueAtTime(player.weaponIdx===0? 800:150, now);
+        osc.frequency.setValueAtTime(player.weaponIdx===0?  800:150, now);
         osc. frequency.exponentialRampToValueAtTime(50, now + 0.15);
         gain.gain.setValueAtTime(0.1, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
@@ -86,7 +86,7 @@ function playSound(type) {
     } 
     else if(type === 'hit') {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, now);
+        osc.frequency. setValueAtTime(300, now);
         osc.frequency.linearRampToValueAtTime(0, now + 0.1);
         gain.gain.setValueAtTime(0.1, now);
     }
@@ -157,8 +157,8 @@ function init() {
     });
 
     document.addEventListener('mousemove', e => {
-        if(document.pointerLockElement && ! player.dead) {
-            camRot.y -= e.movementX * 0.002;
+        if(document.pointerLockElement && !player.dead) {
+            camRot.y -= e.movementX * 0. 002;
             camRot.x -= e.movementY * 0.002;
             camRot.x = Math.max(-1. 5, Math.min(1. 5, camRot.x));
             input.mouseX = e.movementX; input.mouseY = e.movementY;
@@ -184,13 +184,13 @@ function createWeapon() {
     const matBody = new THREE.MeshStandardMaterial({ color: 0x111, roughness: 0.2, metalness: 0.9 });
     const matGlow = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
 
-    weaponBody = new THREE. Mesh(new THREE.BoxGeometry(0. 12, 0.18, 0.7), matBody);
+    weaponBody = new THREE.Mesh(new THREE.BoxGeometry(0. 12, 0.18, 0.7), matBody);
     weaponRail = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.02, 0.65), matGlow);
     weaponRail.position.y = 0.1;
     
     weaponGroup.add(weaponBody, weaponRail);
     muzzleLight = new THREE. PointLight(0x00ffff, 0, 15);
-    muzzleLight.position.set(0, 0, -0.8);
+    muzzleLight. position.set(0, 0, -0.8);
     weaponGroup.add(muzzleLight);
 
     weaponGroup.position.set(0. 3, -0.25, -0.5);
@@ -254,7 +254,7 @@ function updateChunks() {
                 const mIdx = wallMeshes.findIndex(m => m.userData.box === c);
                 if(mIdx > -1) wallMeshes.splice(mIdx, 1);
             });
-            chunks. delete(key);
+            chunks.delete(key);
         }
     }
 }
@@ -280,7 +280,7 @@ function createChunk(cx, cz, key) {
         
         if(Math.abs(wx) < 15 && Math.abs(wz) < 15) continue; 
 
-        const wall = new THREE. Mesh(new THREE.BoxGeometry(w, h, 2), wallMat. clone()); 
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2), wallMat. clone()); 
         wall.position. set(wx, h/2, wz);
         wall.rotation.y = Math.random() > 0.5 ? 0 : Math.PI/2;
         grp.add(wall);
@@ -314,10 +314,10 @@ function spawnEnemy() {
         geo = new THREE.TetrahedronGeometry(1. 0);
         color = 0xff0055; hp = 3; speed = 14; scale = 1;
     } else if (type === 1) { 
-        geo = new THREE. BoxGeometry(1.5, 1.5, 1.5);
+        geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
         color = 0x00ff88; hp = 8; speed = 9; scale = 1.2;
     } else { 
-        geo = new THREE. DodecahedronGeometry(1.2);
+        geo = new THREE.DodecahedronGeometry(1.2);
         color = 0x00ffff; hp = 20; speed = 5; scale = 1.5;
     }
 
@@ -394,7 +394,7 @@ function updateEnemies(dt) {
                 document.getElementById('hp-fill').style.width = player.hp + '%';
                 addTrauma(0.5 * dt);
                 document.getElementById('damage-fx').style.opacity = Math.min(0.8, (100 - player.hp) / 100);
-                if(player.hp <= 0 && !player.dead) gameOver();
+                if(player.hp <= 0 && ! player.dead) gameOver();
             }
         }
     }
@@ -414,7 +414,7 @@ function performDash() {
     const right = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), camRot.y);
     
     const dashDir = new THREE.Vector3();
-    if(input.w) dashDir.add(forward); if(input.s) dashDir.sub(forward);
+    if(input.w) dashDir.add(forward); if(input.s) dashDir. sub(forward);
     if(input. d) dashDir.add(right); if(input.a) dashDir.sub(right);
     if(dashDir.length() === 0) dashDir.copy(forward);
     dashDir.normalize();
@@ -458,12 +458,12 @@ function fireWeapon() {
 
     for(let i=0; i<w.count; i++) {
         const proj = new THREE. Mesh(new THREE.BoxGeometry(0.1, 0.1, 1), new THREE.MeshBasicMaterial({color: w.color}));
-        const dir = new THREE.Vector3(0,0,-1). applyQuaternion(camera.quaternion);
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
         dir.x += (Math.random() - 0. 5) * w.spread;
         dir.y += (Math.random() - 0.5) * w.spread;
         dir.normalize();
 
-        proj.position.copy(camera.position).add(dir). add(new THREE.Vector3(0, -0.15, 0));
+        proj.position.copy(camera.position). add(dir). add(new THREE.Vector3(0, -0.15, 0));
         proj. quaternion.copy(camera.quaternion);
         
         scene.add(proj);
@@ -481,7 +481,7 @@ function updateProjectiles(dt) {
         p.life -= dt;
         
         let hit = false;
-        pBox.setFromObject(p.mesh);
+        pBox.setFromObject(p. mesh);
 
         for(let j=enemies.length-1; j>=0; j--) {
             const e = enemies[j];
@@ -503,7 +503,7 @@ function updateProjectiles(dt) {
                     player.score += 150;
                     addTrauma(0.2);
 
-                    const coolTexts = ["🔥 HEADSHOT!", "⚡ INSANE!", "💥 OBLITERATED!", "🎯 PERFECT!", "✨ LEGENDARY!"];
+                    const coolTexts = ["🔥 HEADSHOT!", "⚡ INSANE!", "💥 OBLITERATED!", "🎯 PERFECT!", "✨ LEGENDARY! "];
                     if(Math.random()>0.3) showFloatingText(coolTexts[Math.floor(Math.random()*5)], null);
                 }
                 break;
@@ -521,15 +521,15 @@ function spawnParticles(pos, count, color, isExplosion = false) {
     for(let i=0; i<count; i++) {
         const geo = geometries[Math.floor(Math. random() * geometries.length)];
         const mat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: color, emissiveIntensity: 2, roughness: 0.1 });
-        const mesh = new THREE. Mesh(geo, mat);
+        const mesh = new THREE.Mesh(geo, mat);
         const spread = isExplosion ? 1. 5 : 0.5;
-        mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-. 5)*spread, (Math.random()-.5)*spread, (Math.random()-.5)*spread));
-        mesh.rotation.set(Math.random()*Math. PI, Math.random()*Math.PI, Math.random()*Math. PI);
+        mesh.position.copy(pos).add(new THREE. Vector3((Math.random()-0.5)*spread, (Math.random()-0.5)*spread, (Math. random()-0.5)*spread));
+        mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math. random()*Math.PI);
         scene.add(mesh);
         particles.push({ 
             mesh, 
-            vel: new THREE.Vector3((Math.random()-.5) * (isExplosion? 30:10), (Math.random()-.5) * (isExplosion? 30:10) + 5, (Math.random()-.5) * (isExplosion?30:10)), 
-            rotVel: { x: (Math.random()-.5)*10, y: (Math.random()-.5)*10 },
+            vel: new THREE.Vector3((Math.random()-0.5) * (isExplosion?  30:10), (Math.random()-0. 5) * (isExplosion? 30:10) + 5, (Math.random()-0.5) * (isExplosion? 30:10)), 
+            rotVel: { x: (Math.random()-0.5)*10, y: (Math.random()-0.5)*10 },
             life: 1. 0, startScale: 1. 0
         });
     }
@@ -560,7 +560,7 @@ function createShockwave(pos, speed) {
 }
 
 function addMotionTrail(dt) {
-    const speed = new THREE.Vector3(player.vel.x, 0, player. vel.z). length();
+    const speed = new THREE.Vector3(player.vel.x, 0, player.vel.z).length();
     if(speed > 25 && CONFIG.trailEnabled && Math.random() > 0.3) {
         const geometry = new THREE.SphereGeometry(0.3, 6, 6);
         const material = new THREE.MeshBasicMaterial({
@@ -570,8 +570,8 @@ function addMotionTrail(dt) {
             wireframe: true
         });
         
-        const sphere = new THREE.Mesh(geometry, material);
-        sphere.position. copy(player.pos). add(new THREE.Vector3(
+        const sphere = new THREE. Mesh(geometry, material);
+        sphere.position.copy(player.pos). add(new THREE.Vector3(
             (Math.random() - 0.5) * 0.5,
             0,
             (Math.random() - 0.5) * 0.5
@@ -580,7 +580,7 @@ function addMotionTrail(dt) {
         
         motionTrail.push({
             mesh: sphere,
-            life: 0. 5
+            life: 0.5
         });
     }
 }
@@ -641,11 +641,11 @@ function updatePhysics(dt) {
     if(cameraShake > 0) {
         cameraShake -= dt * 2; if(cameraShake<0) cameraShake=0;
         const amt = cameraShake*cameraShake * 0.5;
-        camera.position.add(new THREE.Vector3((Math.random()-.5)*amt, (Math. random()-.5)*amt, (Math.random()-.5)*amt));
+        camera.position.add(new THREE.Vector3((Math.random()-0.5)*amt, (Math.random()-0.5)*amt, (Math. random()-0.5)*amt));
     }
-    camera.rotation.set(camRot.x, camRot. y, 0, 'YXZ');
+    camera.rotation.set(camRot. x, camRot.y, 0, 'YXZ');
 
-    const speed = new THREE.Vector3(player.vel.x, 0, player. vel.z).length();
+    const speed = new THREE.Vector3(player.vel.x, 0, player.vel.z).length();
     
     const targetFov = player.baseFov + Math.min(speed * 0.3, 25);
     camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 5);
@@ -654,7 +654,7 @@ function updatePhysics(dt) {
     const pulse = Math.sin(clock.elapsedTime * 10) * 0.05; 
     weaponGroup.scale.set(1+pulse, 1+pulse, 1);
     
-    weaponSway.x = THREE.MathUtils.lerp(weaponSway.x, input.mouseX * -0.003, 0.1);
+    weaponSway. x = THREE.MathUtils.lerp(weaponSway.x, input.mouseX * -0.003, 0.1);
     weaponSway.y = THREE.MathUtils.lerp(weaponSway.y, input.mouseY * -0.003, 0.1);
     
     if(recoil > 0) recoil -= dt * 3; else recoil = 0;
@@ -679,7 +679,7 @@ function updatePhysics(dt) {
         const spd = player.vel.length();
         if(spd > 0) {
             const drop = spd * CONFIG.friction * dt;
-            player.vel. multiplyScalar(Math.max(spd - drop, 0) / spd);
+            player.vel.multiplyScalar(Math.max(spd - drop, 0) / spd);
         }
     }
 
@@ -692,7 +692,7 @@ function updatePhysics(dt) {
     if(input.space && player.onGround) {
         player. vel.y = CONFIG.jumpForce;
         player.onGround = false;
-        spawnParticles(player.pos.clone().sub(new THREE.Vector3(0,2,0)), 5, 0xffffff);
+        spawnParticles(player.pos. clone().sub(new THREE.Vector3(0,2,0)), 5, 0xffffff);
     }
 
     const nextPos = player.pos.clone(). add(player.vel.clone().multiplyScalar(dt));
@@ -713,7 +713,7 @@ function updatePhysics(dt) {
         if(speed > CONFIG.wallBreakSpeed && hitWall && hitWall.userData.isBreakable) {
             spawnParticles(hitWall.position, 30, 0xff0055, true); 
             playSound('smash');
-            showFloatingText(["WTF! !", "SMASH!", "BOOM! "][Math.floor(Math.random()*3)], null);
+            showFloatingText(["WTF!  !", "SMASH!", "BOOM!  "][Math.floor(Math.random()*3)], null);
             addTrauma(0.5);
             scene.remove(hitWall);
             wallMeshes.splice(wallMeshes.indexOf(hitWall), 1);
@@ -801,7 +801,7 @@ function loop() {
     
     for(let i=particles.length-1; i>=0; i--) {
         const p = particles[i];
-        p.life -= dt * 1. 5; 
+        p.life -= dt * 1.5; 
         p.vel.y -= 25 * dt;
         p.mesh.position.add(p.vel.clone().multiplyScalar(dt));
         p.mesh.rotation.x += p.rotVel.x * dt;
