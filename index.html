@@ -24,14 +24,14 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             min-width: 100px;
         }
-        
+
         .label { font-size: 10px; color: #aaa; font-weight: 900; letter-spacing: 4px; display: block; margin-bottom: 2px; }
         .value { font-size: 50px; font-weight: 900; color: #fff; line-height: 0.85; font-style: italic; }
-        
+
         #hp-val { color: #ff0055; text-shadow: 0 0 20px rgba(255, 0, 85, 0.8); }
         #hp-bar-bg { width: 100%; height: 6px; background: #333; margin-top: 8px; transform: skewX(15deg); overflow: hidden; }
         #hp-fill { width: 100%; height: 100%; background: #ff0055; transition: width 0.2s; box-shadow: 0 0 15px #ff0055; }
-        
+
         #weapon-name { color: #ffff00; text-shadow: 0 0 20px rgba(255, 255, 0, 0.8); font-size: 30px; }
 
         #crosshair {
@@ -58,7 +58,7 @@
             background: radial-gradient(circle, transparent 40%, rgba(255, 0, 50, 0.6) 90%);
             opacity: 0; transition: opacity 0.1s; mix-blend-mode: hard-light; pointer-events: none;
         }
-        
+
         #message {
             position: absolute; top: 25%; width: 100%; text-align: center;
             font-size: 32px; color: #fff; font-weight: 900; opacity: 0; font-style: italic;
@@ -66,7 +66,7 @@
             transition: opacity 0.2s;
         }
 
-        /* NEW: Dash cooldown indicator */
+   
         #dash-indicator {
             position: absolute; bottom: 150px; right: 40px;
             width: 80px; height: 80px;
@@ -77,18 +77,18 @@
             flex-direction: column;
             backdrop-filter: blur(8px);
         }
-        
+
         #dash-indicator .dash-label {
             font-size: 10px; color: #0ff; font-weight: 900; letter-spacing: 2px;
         }
-        
+
         #dash-cooldown-ring {
             position: absolute; inset: -3px;
             border-radius: 50%;
             background: conic-gradient(#0ff 0%, transparent 0%);
             transition: background 0.1s linear;
         }
-        
+
         #dash-icon {
             font-size: 32px; color: #0ff; text-shadow: 0 0 10px #0ff; z-index: 1;
         }
@@ -104,13 +104,13 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
-        
+
         #streak-display.active { opacity: 1; }
-        
+
         #streak-display .streak-label {
             font-size: 10px; color: #ff0055; font-weight: 900; letter-spacing: 3px;
         }
-        
+
         #streak-display .streak-value {
             font-size: 40px; font-weight: 900; color: #ff0055; 
             text-shadow: 0 0 20px #ff0055; font-style: italic;
@@ -125,7 +125,7 @@
         h1 { font-size: 100px; color: #fff; margin: 0; font-style: italic; letter-spacing: -6px; text-shadow: 5px 5px 0px #ff0055; }
         p { color: #ccc; font-size: 18px; margin-bottom: 40px; letter-spacing: 2px; font-weight: bold; }
         .controls { color: #888; font-size: 14px; margin-bottom: 20px; }
-        
+
         button {
             padding: 20px 80px; font-size: 24px; background: transparent; color: #fff; 
             border: 4px solid #fff; cursor: pointer; font-weight: 900; font-style: italic; 
@@ -133,7 +133,6 @@
         }
         button:hover { background: #fff; color: #000; box-shadow: 0 0 50px #fff; transform: scale(1.1); }
 
-        /* NEW: FPS Counter */
         #fps-counter {
             position: absolute; top: 20px; left: 20px;
             font-size: 14px; color: #0f0; font-weight: bold;
@@ -152,82 +151,54 @@
         <button id="start-btn">BAŞLAT</button>
     </div>
 
+    <div id="ui-layer">
+        <div id="fps-counter">FPS: 60</div>
+        <div id="damage-fx"></div>
+        <div id="message"></div>
+        <div id="crosshair"></div>
+        <div id="hitmarker">
+            <div class="hm-line"></div>
+            <div class="hm-line"></div>
+        </div>
+
+
+        <!-- NEW: Kill streak indicator -->
         <div id="streak-display">
             <div class="streak-label">COMBO</div>
             <div class="streak-value" id="streak-value">0</div>
-        </div>
-
+@@ -178,7 +160,7 @@
         <div class="hud-bottom" id="hud-container">
             <div class="stat-box">
                 <span class="label">SAĞLIK</span>
-                <div class="value" id="hp-val"></div>
+                <div class="value" id="hp-val">100</div>
                 <div id="hp-bar-bg"><div id="hp-fill"></div></div>
             </div>
             <div class="stat-box">
-                <span class="label">SİLAH</span>
-                <div class="value" id="weapon-name">RIFLE</div>
-            </div>
-            <div class="stat-box">
-                <span class="label">HIZ</span>
-                <div class="value" id="speed-val">0</div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+@@ -202,7 +184,6 @@
     <script src="main.js"></script>
 
     <script>
+
         let lastTime = performance.now();
         let frames = 0;
         function updateFPS() {
-            frames++;
-            const now = performance.now();
-            if(now >= lastTime + 1000) {
-                document.getElementById('fps-counter').innerText = 'FPS: ' + frames;
-                frames = 0;
-                lastTime = now;
-            }
-            requestAnimationFrame(updateFPS);
+@@ -217,7 +198,6 @@
         }
         updateFPS();
+
 
         setInterval(() => {
             if(typeof player !== 'undefined' && typeof CONFIG !== 'undefined') {
                 const now = Date.now();
-                const timeSinceDash = now - player.lastDash;
-                const cooldownProgress = Math.min(1, timeSinceDash / CONFIG.dashCooldown);
-                const ring = document.getElementById('dash-cooldown-ring');
-                const icon = document.getElementById('dash-icon');
-                
-                if(cooldownProgress >= 1) {
-                    ring.style.background = 'conic-gradient(#0ff 100%, transparent 0%)';
-                    icon.style.opacity = '1';
-                    icon.style.transform = 'scale(1)';
-                } else {
-                    const angle = cooldownProgress * 360;
-                    ring.style.background = `conic-gradient(#0ff ${angle}deg, transparent ${angle}deg)`;
-                    icon.style.opacity = '0.3';
+@@ -237,7 +217,6 @@
                     icon.style.transform = 'scale(0.8)';
                 }
 
+  
                 const streakDisplay = document.getElementById('streak-display');
                 const streakValue = document.getElementById('streak-value');
                 if(player.killStreak >= 3) {
-                    streakDisplay.classList.add('active');
-                    streakValue.innerText = player.killStreak;
-                } else {
-                    streakDisplay.classList.remove('active');
-                }
-            }
-        }, 50);
+@@ -251,3 +230,4 @@
     </script>
 </body>
 </html>
-
