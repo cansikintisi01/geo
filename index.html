@@ -152,24 +152,6 @@
         <button id="start-btn">BAŞLAT</button>
     </div>
 
-    <div id="ui-layer">
-        <div id="fps-counter">FPS: 60</div>
-        <div id="damage-fx"></div>
-        <div id="message"></div>
-        <div id="crosshair"></div>
-        <div id="hitmarker">
-            <div class="hm-line"></div>
-            <div class="hm-line"></div>
-        </div>
-
-        <!-- NEW: Dash cooldown indicator -->
-        <div id="dash-indicator">
-            <div id="dash-cooldown-ring"></div>
-            <div id="dash-icon">⚡</div>
-            <div class="dash-label">DASH</div>
-        </div>
-
-        <!-- NEW: Kill streak indicator -->
         <div id="streak-display">
             <div class="streak-label">COMBO</div>
             <div class="streak-value" id="streak-value">0</div>
@@ -178,7 +160,7 @@
         <div class="hud-bottom" id="hud-container">
             <div class="stat-box">
                 <span class="label">SAĞLIK</span>
-                <div class="value" id="hp-val">100</div>
+                <div class="value" id="hp-val"></div>
                 <div id="hp-bar-bg"><div id="hp-fill"></div></div>
             </div>
             <div class="stat-box">
@@ -202,7 +184,6 @@
     <script src="main.js"></script>
 
     <script>
-        // FPS Counter
         let lastTime = performance.now();
         let frames = 0;
         function updateFPS() {
@@ -217,7 +198,6 @@
         }
         updateFPS();
 
-        // Dash cooldown visual update
         setInterval(() => {
             if(typeof player !== 'undefined' && typeof CONFIG !== 'undefined') {
                 const now = Date.now();
@@ -237,7 +217,6 @@
                     icon.style.transform = 'scale(0.8)';
                 }
 
-                // Update kill streak display
                 const streakDisplay = document.getElementById('streak-display');
                 const streakValue = document.getElementById('streak-value');
                 if(player.killStreak >= 3) {
@@ -251,3 +230,4 @@
     </script>
 </body>
 </html>
+
