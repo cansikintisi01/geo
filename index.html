@@ -93,7 +93,6 @@
             font-size: 32px; color: #0ff; text-shadow: 0 0 10px #0ff; z-index: 1;
         }
 
-        /* NEW: Kill streak indicator */
         #streak-display {
             position: absolute; top: 40px; right: 40px;
             background: rgba(0, 0, 0, 0.7);
@@ -133,7 +132,6 @@
         }
         button:hover { background: #fff; color: #000; box-shadow: 0 0 50px #fff; transform: scale(1.1); }
 
-        /* NEW: FPS Counter */
         #fps-counter {
             position: absolute; top: 20px; left: 20px;
             font-size: 14px; color: #0f0; font-weight: bold;
@@ -161,7 +159,6 @@
             <div class="hm-line"></div>
         </div>
 
-        <!-- NEW: Kill streak indicator -->
         <div id="streak-display">
             <div class="streak-label">COMBO</div>
             <div class="streak-value" id="streak-value">0</div>
@@ -194,7 +191,6 @@
     <script src="main.js"></script>
 
     <script>
-        // FPS Counter
         let lastTime = performance.now();
         let frames = 0;
         function updateFPS() {
@@ -209,7 +205,6 @@
         }
         updateFPS();
 
-        // Dash cooldown visual update
         setInterval(() => {
             if(typeof player !== 'undefined' && typeof CONFIG !== 'undefined') {
                 const now = Date.now();
@@ -229,7 +224,6 @@
                     icon.style.transform = 'scale(0.8)';
                 }
 
-                // Update kill streak display
                 const streakDisplay = document.getElementById('streak-display');
                 const streakValue = document.getElementById('streak-value');
                 if(player.killStreak >= 3) {
@@ -243,3 +237,4 @@
     </script>
 </body>
 </html>
+
